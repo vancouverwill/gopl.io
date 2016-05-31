@@ -8,6 +8,9 @@
 // This version uses bounded parallelism.
 // For simplicity, it does not address the termination problem.
 //
+
+// to run
+//  ./crawl3 http://gopl.io/
 package main
 
 import (

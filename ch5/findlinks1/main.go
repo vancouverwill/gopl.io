@@ -16,6 +16,7 @@ import (
 
 func main() {
 	doc, err := html.Parse(os.Stdin)
+	fmt.Printf("%v", doc)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "findlinks1: %v\n", err)
 		os.Exit(1)
@@ -42,35 +43,3 @@ func visit(links []string, n *html.Node) []string {
 	}
 	return links
 }
-
-//!-visit
-
-/*
-//!+html
-package html
-
-type Node struct {
-	Type                    NodeType
-	Data                    string
-	Attr                    []Attribute
-	FirstChild, NextSibling *Node
-}
-
-type NodeType int32
-
-const (
-	ErrorNode NodeType = iota
-	TextNode
-	DocumentNode
-	ElementNode
-	CommentNode
-	DoctypeNode
-)
-
-type Attribute struct {
-	Key, Val string
-}
-
-func Parse(r io.Reader) (*Node, error)
-//!-html
-*/
