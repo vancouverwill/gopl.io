@@ -21,28 +21,33 @@ func main() {
 		width, height          = 1024, 1024
 	)
 
-	complete := make(chan bool)
+	// complete := make(chan bool, 64)
+	complete := make(chan struct{}, 4)
 
 	img := image.NewRGBA(image.Rect(0, 0, width, height))
 	for py := 0; py < height; py++ {
-		y := float64(py)/height*(ymax-ymin) + ymin
-		for px := 0; px < width; px++ {
-			x := float64(px)/width*(xmax-xmin) + xmin
-			z := complex(x, y)
-			// Image point (px, py) represents complex value z.
-			go func(px, py int, z complex128) {
+		go func(py int) {
+			y := float64(py)/height*(ymax-ymin) + ymin
+			for px := 0; px < width; px++ {
+				x := float64(px)/width*(xmax-xmin) + xmin
+				z := complex(x, y)
+				// Image point (px, py) represents complex value z.
+				// go func(px, py int, z complex128) {
 				img.Set(px, py, mandelbrot(z))
-				complete <- true
-			}(px, py, z)
+				// complete <- true
+				// }(px, py, z)
 
-		}
+			}
+			complete <- struct{}{}
+		}(py)
 	}
 
 	for py := 0; py < height; py++ {
-		for px := 0; px < width; px++ {
-			<-complete
-		}
+		// for px := 0; px < width; px++ {
+		<-complete
+		// }
 	}
+	close(complete)
 
 	png.Encode(os.Stdout, img) // NOTE: ignoring errors
 }
