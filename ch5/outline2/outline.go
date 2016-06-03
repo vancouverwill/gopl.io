@@ -15,12 +15,16 @@ import (
 )
 
 func main() {
+	if len(os.Args) == 1 {
+		fmt.Println("outline should be run with at least one url argument `go build && ./outline2 http://www.gopl.io/`")
+	}
 	for _, url := range os.Args[1:] {
 		outline(url)
 	}
 }
 
 func outline(url string) error {
+
 	resp, err := http.Get(url)
 	if err != nil {
 		return err

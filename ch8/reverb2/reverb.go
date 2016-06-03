@@ -3,6 +3,14 @@
 
 // See page 224.
 
+// Use Reverd with Netcat
+
+/*
+`go build ../ch8/reverb2
+go build ../ch8/netcat2
+./reverb2 & ./netcat2
+*/
+
 // Reverb2 is a TCP server that simulates an echo.
 package main
 
@@ -21,6 +29,11 @@ func echo(c net.Conn, shout string, delay time.Duration) {
 	fmt.Fprintln(c, "\t", shout)
 	time.Sleep(delay)
 	fmt.Fprintln(c, "\t", strings.ToLower(shout))
+
+	for i := len(shout) - 1; i >= 0; i-- {
+		time.Sleep(delay)
+		fmt.Fprintln(c, "\t", strings.ToLower(shout[:i]))
+	}
 }
 
 //!+

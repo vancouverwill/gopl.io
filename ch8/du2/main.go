@@ -23,6 +23,7 @@ var verbose = flag.Bool("v", false, "show verbose progress messages")
 
 func main() {
 	// ...start background goroutine...
+	begin := time.Now()
 
 	//!-
 	// Determine the initial directories.
@@ -62,6 +63,10 @@ loop:
 		}
 	}
 	printDiskUsage(nfiles, nbytes) // final totals
+
+	end := time.Now()
+	diff := end.Sub(begin)
+	fmt.Println("script took", diff.String())
 }
 
 //!-

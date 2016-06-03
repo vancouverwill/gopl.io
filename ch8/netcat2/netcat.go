@@ -3,6 +3,12 @@
 
 // See page 223.
 
+/*
+`go build ../ch8/reverb2
+go build ../ch8/netcat2
+./reverb2 & ./netcat2
+*/
+
 // Netcat is a simple read/write client for TCP servers.
 package main
 

@@ -26,8 +26,6 @@ var vFlag = flag.Bool("v", false, "show verbose progress messages")
 func main() {
 	// ...determine roots...
 
-	begin := time.Now()
-
 	//!-
 	flag.Parse()
 
@@ -57,12 +55,12 @@ func main() {
 		tick = time.Tick(500 * time.Millisecond)
 	}
 	var nfiles, nbytes int64
-loop:
+printingLoop:
 	for {
 		select {
 		case size, ok := <-fileSizes:
 			if !ok {
-				break loop // fileSizes was closed
+				break printingLoop // fileSizes was closed
 			}
 			nfiles++
 			nbytes += size
@@ -74,10 +72,6 @@ loop:
 	printDiskUsage(nfiles, nbytes) // final totals
 	//!+
 	// ...select loop...
-
-	end := time.Now()
-	diff := end.Sub(begin)
-	fmt.Println("script took", diff.String())
 }
 
 //!-
