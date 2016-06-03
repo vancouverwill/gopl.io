@@ -30,23 +30,50 @@ func main() {
 	flag.Parse()
 
 	// Determine the initial directories.
-	roots := flag.Args()
-	if len(roots) == 0 {
-		roots = []string{"."}
+	// roots := flag.Args()
+	// if len(roots) == 0 {
+	// 	roots = []string{"."}
+	// }
+
+	root := flag.Arg(0)
+
+	fmt.Println("root", root)
+
+	type dirDetails struct {
+		size    int64
+		channel chan int64
+		n       sync.WaitGroup
+		dirName string
+	}
+	// var allFileSizes []chan int64
+	var allFileSizes []dirDetails
+	for _, directoryContent := range dirents(root) {
+		if directoryContent.IsDir() {
+			tmp := dirDetails{channel: make(chan int64), dirName: directoryContent.Name()}
+			allFileSizes = append(allFileSizes, tmp)
+			// allFileSizes := append(allFileSizes, make(chan int64))
+		}
 	}
 
 	//!+
 	// Traverse each root of the file tree in parallel.
-	fileSizes := make(chan int64)
-	var n sync.WaitGroup
-	for _, root := range roots {
-		n.Add(1)
-		go walkDir(root, &n, fileSizes)
+	// fileSizes := make(chan int64)
+	// var n sync.WaitGroup
+	// for _, root := range roots {
+	for _, allFileSize := range allFileSizes {
+		allFileSize.n.Add(1)
+		go walkDir(allFileSize.dirName, &allFileSize.n, allFileSize.channel)
+		go func(allFileSize dirDetails) {
+			allFileSize.n.Wait()
+			close(allFileSize.channel)
+		}(allFileSize)
 	}
-	go func() {
-		n.Wait()
-		close(fileSizes)
-	}()
+
+	// go func() {
+	// 	n.Wait()
+	// 	close(fileSizes)
+	// }()
+
 	//!-
 
 	// Print the results periodically.
