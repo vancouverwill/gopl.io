@@ -1,0 +1,14 @@
+{
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"name": "Launch",
+			"type": "go",
+			"request": "launch",
+			"mode": "debug",
+			"program": "${workspaceRoot}/ch8/ex8.9_du_w_write_group_and_seperate_directory_readings/concurrent_w_w/",
+			"env": {},
+			"args": []
+		}
+	]
+}
