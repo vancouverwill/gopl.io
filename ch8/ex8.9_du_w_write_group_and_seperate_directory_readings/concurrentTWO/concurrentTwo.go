@@ -20,6 +20,13 @@ import (
 	"time"
 )
 
+type dirDetails struct {
+	size    int64
+	c       chan int64
+	n       sync.WaitGroup
+	dirName string
+}
+
 var vFlag = flag.Bool("v", false, "show verbose progress messages")
 
 //!+
@@ -36,13 +43,6 @@ func main() {
 	// if len(roots) == 0 {
 	// 	roots = []string{"."}
 	// }
-
-	type dirDetails struct {
-		size    int64
-		c       chan int64
-		n       sync.WaitGroup
-		dirName string
-	}
 
 	root := flag.Arg(0)
 
@@ -66,7 +66,7 @@ func main() {
 	}()
 	//!-
 
-	combinedFileSizes := combine(allFileSizes[0].c)
+	combinedFileSizes := combine(allFileSizes)
 
 	// Print the results periodically.
 	var tick <-chan time.Time
@@ -119,14 +119,14 @@ func walkDir(dir string, n *sync.WaitGroup, fileSizes chan<- int64) {
 	}
 }
 
-func combine(input chan int64) chan int64 {
+func combine(input []dirDetails) chan int64 {
 	combined := make(chan int64)
 	go func(input chan int64) {
 		defer close(combined)
-		for int := range input {
-			combined <- int
+		for inputI := range input {
+			combined <- inputI
 		}
-	}(input)
+	}(input[0].c)
 	return combined
 }
 
