@@ -36,25 +36,37 @@ func main() {
 	// if len(roots) == 0 {
 	// 	roots = []string{"."}
 	// }
+
+	type dirDetails struct {
+		size    int64
+		c       chan int64
+		n       sync.WaitGroup
+		dirName string
+	}
+
 	root := flag.Arg(0)
 
 	fmt.Println(root)
 
 	//!+
 	// Traverse each root of the file tree in parallel.
-	fileSizes := make(chan int64)
-	var n sync.WaitGroup
+	// fileSizes := make(chan int64)
+	// var n sync.WaitGroup
+	var allFileSizes []dirDetails
+	tmp := dirDetails{c: make(chan int64), dirName: root}
+	allFileSizes = append(allFileSizes, tmp)
+
 	// for _, root := range roots {
-	n.Add(1)
-	go walkDir(root, &n, fileSizes)
+	allFileSizes[0].n.Add(1)
+	go walkDir(allFileSizes[0].dirName, &allFileSizes[0].n, allFileSizes[0].c)
 	// }
 	go func() {
-		n.Wait()
-		close(fileSizes)
+		allFileSizes[0].n.Wait()
+		close(allFileSizes[0].c)
 	}()
 	//!-
 
-	combinedFileSizes := combine(fileSizes)
+	combinedFileSizes := combine(allFileSizes[0].c)
 
 	// Print the results periodically.
 	var tick <-chan time.Time
