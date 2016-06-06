@@ -6,6 +6,9 @@
 // The du3 command computes the disk usage of the files in a directory.
 package main
 
+// PLAN
+// 1. make array of objects each holding root dir, channel, waitgroup, their size and their
+
 // The du3 variant traverses all directories in parallel.
 // It uses a concurrency-limiting counting semaphore
 // to avoid opening too many files at once.
@@ -22,6 +25,7 @@ import (
 
 type dirDetails struct {
 	size    int64
+	count   int
 	c       chan int64
 	n       sync.WaitGroup
 	dirName string
@@ -66,29 +70,48 @@ func main() {
 	}()
 	//!-
 
-	combinedFileSizes := combine(allFileSizes)
+	// combinedFileSizes := combine(allFileSizes)
+	// combine(allFileSizes)
+
+	var tick <-chan time.Time
+
+	done := make(chan bool)
+
+	go func(input *dirDetails) {
+		defer func() {
+			done <- true
+		}()
+		for inputI := range input.c {
+			input.size += inputI
+			input.count++
+			// combined <- inputI
+		}
+	}(&allFileSizes[0])
 
 	// Print the results periodically.
-	var tick <-chan time.Time
-	if *vFlag {
-		tick = time.Tick(500 * time.Millisecond)
-	}
-	var nfiles, nbytes int64
+
+	// if *vFlag {
+	tick = time.Tick(500 * time.Millisecond)
+	// }
+	// var nfiles, nbytes int64
 loop:
 	for {
 		select {
-		case size, ok := <-combinedFileSizes:
-			if !ok {
-				break loop // fileSizes was closed
-			}
-			nfiles++
-			nbytes += size
+		case <-done:
+			break loop // fileSizes was closed
+		// case size, ok := <-combinedFileSizes:
+		// 	if !ok {
+		// 		break loop // fileSizes was closed
+		// 	}
+		// 	nfiles++
+		// 	nbytes += size
 		case <-tick:
-			printDiskUsage(nfiles, nbytes)
+			printDiskUsageCombined(allFileSizes)
+			// printDiskUsage(nfiles, nbytes)
 		}
 	}
 
-	printDiskUsage(nfiles, nbytes) // final totals
+	// printDiskUsage(nfiles, nbytes) // final totals
 	//!+
 	// ...select loop...
 
@@ -99,8 +122,16 @@ loop:
 
 //!-
 
+func printDiskUsageCombined(dataSet []dirDetails) {
+	fmt.Printf("Combined ")
+	for _, data := range dataSet {
+		fmt.Printf("%s has %d files  %.1f GB", data.dirName, data.count, float64(data.size)/1e9)
+	}
+	fmt.Printf("\n ")
+}
+
 func printDiskUsage(nfiles, nbytes int64) {
-	fmt.Printf("%d files  %.1f GB\n", nfiles, float64(nbytes)/1e9)
+	fmt.Printf("printDiskUsage - %d files  %.1f GB\n", nfiles, float64(nbytes)/1e9)
 }
 
 // walkDir recursively walks the file tree rooted at dir
@@ -121,12 +152,14 @@ func walkDir(dir string, n *sync.WaitGroup, fileSizes chan<- int64) {
 
 func combine(input []dirDetails) chan int64 {
 	combined := make(chan int64)
-	go func(input chan int64) {
+	go func(input *dirDetails) {
 		defer close(combined)
-		for inputI := range input {
+		for inputI := range input.c {
+			input.size += inputI
+			input.count++
 			combined <- inputI
 		}
-	}(input[0].c)
+	}(&input[0])
 	return combined
 }
 
