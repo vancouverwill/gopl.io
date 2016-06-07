@@ -77,16 +77,31 @@ func main() {
 
 	done := make(chan bool)
 
+	var numDirectoriesWorking sync.WaitGroup
+
+	numDirectoriesWorking.Add(len(allFileSizes))
+
+	var nfiles, nbytes int64
+
 	go func(input *dirDetails) {
 		defer func() {
-			done <- true
+			// done <- true
+			numDirectoriesWorking.Done()
 		}()
 		for inputI := range input.c {
 			input.size += inputI
 			input.count++
+
+			nfiles++
+			nbytes += inputI
 			// combined <- inputI
 		}
 	}(&allFileSizes[0])
+
+	go func() {
+		numDirectoriesWorking.Wait()
+		done <- true
+	}()
 
 	// Print the results periodically.
 
@@ -99,19 +114,14 @@ loop:
 		select {
 		case <-done:
 			break loop // fileSizes was closed
-		// case size, ok := <-combinedFileSizes:
-		// 	if !ok {
-		// 		break loop // fileSizes was closed
-		// 	}
-		// 	nfiles++
-		// 	nbytes += size
+
 		case <-tick:
 			printDiskUsageCombined(allFileSizes)
-			// printDiskUsage(nfiles, nbytes)
 		}
 	}
 
-	// printDiskUsage(nfiles, nbytes) // final totals
+	println()
+	printDiskUsage(nfiles, nbytes) // final totals
 	//!+
 	// ...select loop...
 
@@ -131,7 +141,7 @@ func printDiskUsageCombined(dataSet []dirDetails) {
 }
 
 func printDiskUsage(nfiles, nbytes int64) {
-	fmt.Printf("printDiskUsage - %d files  %.1f GB\n", nfiles, float64(nbytes)/1e9)
+	fmt.Printf("printDiskUsage TOTAL - %d files  %.1f GB\n", nfiles, float64(nbytes)/1e9)
 }
 
 // walkDir recursively walks the file tree rooted at dir
