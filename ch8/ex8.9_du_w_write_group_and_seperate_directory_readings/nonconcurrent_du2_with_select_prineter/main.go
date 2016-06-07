@@ -37,57 +37,64 @@ func main() {
 	}
 	// var allFileSizes []chan int64
 	var allFileSizes []dirDetails
-	for _, directoryContent := range dirents(root) {
-		if directoryContent.IsDir() {
-			tmp := dirDetails{channel: make(chan int64), dirName: directoryContent.Name()}
-			allFileSizes = append(allFileSizes, tmp)
-			// allFileSizes := append(allFileSizes, make(chan int64))
-		}
-	}
+	// for _, directoryContent := range dirents(root) {
+	// 	if directoryContent.IsDir() {
+	// tmp := dirDetails{channel: make(chan int64), dirName: directoryContent.Name()}
+	tmp := dirDetails{channel: make(chan int64), dirName: root}
+	allFileSizes = append(allFileSizes, tmp)
+	// allFileSizes := append(allFileSizes, make(chan int64))
+	// 	}
+	// }
+
+	fmt.Println("allFileSizes", len(allFileSizes))
 
 	// fileSizes := make(chan int64)
-	go func() {
+	go func(allFileSizes []dirDetails) {
 		// for i, directoryContent := range dirents(root) {
 		// 	if directoryContent.IsDir() {
-		for _, allFileSize := range allFileSizes {
-			subdir := filepath.Join(root, allFileSize.dirName)
-			// subdir := filepath.Join(root, directoryContent.Name())
-			walkDir(subdir, allFileSize.channel)
-			close(allFileSize.channel)
-		}
+		// for r := range allFileSizes {
+		// subdir := filepath.Join(root, allFileSize.dirName)
+		// subdir := filepath.Join(root, directoryContent.Name())
+		// walkDir(subdir, allFileSize.channel)
+		walkDir(allFileSizes[0].dirName, allFileSizes[0].channel)
+		defer close(allFileSizes[0].channel)
+		// }
 		// 	}
 		// }
 
-	}()
+	}(allFileSizes)
 
 	var tick <-chan time.Time
 	tick = time.Tick(100 * time.Millisecond)
 
 	// Print the results.
 	var totalNfiles, totalNbytes int64
-	for _, allFileSize := range allFileSizes {
-		var nfiles, nbytes int64
-		// for size := range allFileSize.channel {
-		// 	nfiles++
-		// 	nbytes += size
-		// }
-	innerloop:
+	// for r := range allFileSizes {
+	var nfiles, nbytes int64
+	// for size := range allFileSize.channel {
+	// 	nfiles++
+	// 	nbytes += size
+	// }
+innerloop:
+	for {
 		select {
-		case size, ok := <-allFileSize.channel:
+		case size, ok := <-allFileSizes[0].channel:
 			if !ok {
+				fmt.Println("break!")
 				break innerloop // fileSizes was closed
 				// break // fileSizes was closed
 			}
 			nfiles++
 			nbytes += size
 		case <-tick:
-			printDiskUsage(nfiles, nbytes, allFileSize.dirName)
+			printDiskUsage(nfiles, nbytes, allFileSizes[0].dirName)
 		}
-		printDiskUsage(nfiles, nbytes, allFileSize.dirName)
-		totalNfiles += nfiles
-		totalNbytes += nbytes
 	}
-	fmt.Println()
+	printDiskUsage(nfiles, nbytes, allFileSizes[0].dirName)
+	totalNfiles += nfiles
+	totalNbytes += nbytes
+	// }
+	fmt.Println("total")
 	printDiskUsage(totalNfiles, totalNbytes, root)
 	fmt.Println()
 	fmt.Println()
