@@ -71,7 +71,6 @@ func main() {
 			close(allFileSizes[r].c)
 		}(r)
 	}
-	//!-
 
 	// combinedFileSizes := combine(allFileSizes)
 	// combine(allFileSizes)
@@ -110,9 +109,9 @@ func main() {
 
 	// Print the results periodically.
 
-	// if *vFlag {
-	tick = time.Tick(1 * time.Millisecond)
-	// }
+	if *vFlag {
+		tick = time.Tick(1 * time.Millisecond)
+	}
 	// var nfiles, nbytes int64
 loop:
 	for {
@@ -127,8 +126,7 @@ loop:
 
 	println()
 	printDiskUsage(nfiles, nbytes) // final totals
-	//!+
-	// ...select loop...
+	printDiskUsageCombined(allFileSizes)
 
 	end := time.Now()
 	diff := end.Sub(begin)
