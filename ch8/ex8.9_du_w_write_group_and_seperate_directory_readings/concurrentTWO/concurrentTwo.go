@@ -43,31 +43,34 @@ func main() {
 	flag.Parse()
 
 	// Determine the initial directories.
-	// roots := flag.Args()
+	roots := flag.Args()
 	// if len(roots) == 0 {
 	// 	roots = []string{"."}
 	// }
 
-	root := flag.Arg(0)
+	// root := flag.Arg(0)
 
-	fmt.Println(root)
+	// fmt.Println(root)
 
 	//!+
 	// Traverse each root of the file tree in parallel.
 	// fileSizes := make(chan int64)
 	// var n sync.WaitGroup
 	var allFileSizes []dirDetails
-	tmp := dirDetails{c: make(chan int64), dirName: root}
-	allFileSizes = append(allFileSizes, tmp)
+	for _, root := range roots {
+		tmp := dirDetails{c: make(chan int64), dirName: root}
+		allFileSizes = append(allFileSizes, tmp)
+	}
 
-	// for _, root := range roots {
-	allFileSizes[0].n.Add(1)
-	go walkDir(allFileSizes[0].dirName, &allFileSizes[0].n, allFileSizes[0].c)
-	// }
-	go func() {
-		allFileSizes[0].n.Wait()
-		close(allFileSizes[0].c)
-	}()
+	for r := range roots {
+		allFileSizes[r].n.Add(1)
+		go walkDir(allFileSizes[r].dirName, &allFileSizes[r].n, allFileSizes[r].c)
+		// }
+		go func(r int) {
+			allFileSizes[r].n.Wait()
+			close(allFileSizes[r].c)
+		}(r)
+	}
 	//!-
 
 	// combinedFileSizes := combine(allFileSizes)
@@ -83,20 +86,22 @@ func main() {
 
 	var nfiles, nbytes int64
 
-	go func(input *dirDetails) {
-		defer func() {
-			// done <- true
-			numDirectoriesWorking.Done()
-		}()
-		for inputI := range input.c {
-			input.size += inputI
-			input.count++
+	for r := range roots {
+		go func(input *dirDetails) {
+			defer func() {
+				// done <- true
+				numDirectoriesWorking.Done()
+			}()
+			for inputI := range input.c {
+				input.size += inputI
+				input.count++
 
-			nfiles++
-			nbytes += inputI
-			// combined <- inputI
-		}
-	}(&allFileSizes[0])
+				nfiles++
+				nbytes += inputI
+				// combined <- inputI
+			}
+		}(&allFileSizes[r])
+	}
 
 	go func() {
 		numDirectoriesWorking.Wait()
@@ -106,7 +111,7 @@ func main() {
 	// Print the results periodically.
 
 	// if *vFlag {
-	tick = time.Tick(500 * time.Millisecond)
+	tick = time.Tick(1 * time.Millisecond)
 	// }
 	// var nfiles, nbytes int64
 loop:
@@ -135,7 +140,7 @@ loop:
 func printDiskUsageCombined(dataSet []dirDetails) {
 	fmt.Printf("Combined ")
 	for _, data := range dataSet {
-		fmt.Printf("%s has %d files  %.1f GB", data.dirName, data.count, float64(data.size)/1e9)
+		fmt.Printf("%s has %d files  %.1f MB", data.dirName, data.count, float64(data.size)/1e6)
 	}
 	fmt.Printf("\n ")
 }
