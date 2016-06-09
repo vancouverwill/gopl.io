@@ -12,7 +12,7 @@ import (
 
 var httpGetBody = memotest.HTTPGetBody
 
-func Test(t *testing.T) {
+func TestSequential(t *testing.T) {
 	m := memo.New(httpGetBody)
 	memotest.Sequential(t, m)
 }

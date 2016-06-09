@@ -1,0 +1,1 @@
+rewrite the popcount example so it intializes the lookup table using sync.once the first time it is needed.
