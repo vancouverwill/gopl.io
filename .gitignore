@@ -1,5 +1,13 @@
 # Ignore all
-#*
+*
 
 # Unignore all with extensions
-#!*.go
+#!*.*
+
+# Unignore all with go, html, md extensions
+!*.go
+!*.html
+!*.md
+
+# Unignore all dirs
+!*/
