@@ -67,6 +67,8 @@ func handleConn(conn net.Conn) {
 	messages <- who + " has arrived"
 	entering <- client{ch, who}
 
+	reset := make(chan struct{})
+
 	go func() {
 		tick := time.Tick(1 * time.Second)
 		for countdown := 5; countdown > 0; countdown-- {
@@ -78,6 +80,10 @@ func handleConn(conn net.Conn) {
 				// 	fmt.Println("Launch aborted!")
 				// 	return
 				// }
+				ch <- fmt.Sprintf("%d remaining", countdown)
+			case <-reset:
+				countdown = 10
+				ch <- "you have reset!"
 			}
 		}
 
@@ -88,6 +94,7 @@ func handleConn(conn net.Conn) {
 
 	input := bufio.NewScanner(conn)
 	for input.Scan() {
+		reset <- struct{}{}
 		messages <- who + ": " + input.Text()
 	}
 	// NOTE: ignoring potential errors from input.Err()

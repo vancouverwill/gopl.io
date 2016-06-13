@@ -27,19 +27,27 @@ func main() {
 	}
 	done := make(chan struct{})
 	go func() {
-		io.Copy(os.Stdout, conn) // NOTE: ignoring errors
+		src, err := io.Copy(os.Stdout, conn) // NOTE: ignoring errors
+		if err != nil {
+			log.Fatalf("connection is closed:%v", err)
+		}
+		log.Println("src", src)
+		log.Println("err", err)
 		log.Println("done")
 		done <- struct{}{} // signal the main goroutine
 	}()
+	log.Println("going to closed")
 	mustCopy(conn, os.Stdin)
 	conn.Close()
+	log.Println("has closed")
 	<-done // wait for background goroutine to finish
+	log.Println("has done")
 }
 
 //!-
 
 func mustCopy(dst io.Writer, src io.Reader) {
 	if _, err := io.Copy(dst, src); err != nil {
-		log.Fatal(err)
+		log.Fatalf("mustCopy %v", err)
 	}
 }
