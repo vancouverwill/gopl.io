@@ -3,6 +3,9 @@
 
 // See page 139.
 
+// to run
+//  ./findlinks http://gopl.io/
+
 // Findlinks3 crawls the web, starting with the URLs on the command line.
 package main
 
